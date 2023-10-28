@@ -1,8 +1,9 @@
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import tensorflow_hub as hub
 
 # Define data directory and batch size
-data_dir = r'/content/Data'  # Replace with the actual path to your data directory
+data_dir = r'C:\Users\Jonah\PycharmProjects\TumorClassifier\Data'  # Replace with the actual path to your data directory
 batch_size = 32  # Adjust this according to your needs
 image_height, image_width = 256, 256  # Adjust to match your model's input size
 
@@ -31,11 +32,12 @@ validation_generator = datagen.flow_from_directory(
 
 # Create and compile your model
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Conv2D(16, (3, 3), activation='relu', input_shape=(image_height, image_width, 3)),
-    tf.keras.layers.MaxPooling2D(2, 2),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dense(4, activation='softmax')  # Adjust the number of output classes
+    tf.keras.layers.Input(shape=(256,256,3)),
+    hub.KerasLayer('https://tfhub.dev/tensorflow/efficientnet/b7/classification/1'),
+    #the layer which loads eff_net b7
+    tf.keras.layers.Dense(128,activation="relu"),
+    tf.keras.layers.Dense(64,activation='relu'),
+    tf.keras.layers.Dense(4,activation='softmax')
 ])
 model.compile(
     optimizer='adam',
@@ -44,10 +46,11 @@ model.compile(
 )
 
 # Train your model
-epochs = 10  # Adjust the number of training epochs as needed
-history = model.fit(
-    train_generator,
-    epochs=epochs,
-    validation_data=validation_generator
-)
-model.save("tf_cnn_2")
+epochs = 20  # Adjust the number of training epochs as needed
+with tf.device('/GPU:0'):
+    history = model.fit(
+        train_generator,
+        epochs=epochs,
+        validation_data=validation_generator
+    )
+model.save("tf_efficientnet")
